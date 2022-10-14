@@ -1,18 +1,22 @@
 from squares import Squares
 from pieces import Pawn, Rook, Knight, Queen, King, Bishop
 
-
+LEGAL = True
+ILLEGAL = False
 WHITE_TURN = 0
 BLACK_TURN = 1
 WHITE = 0
 BLACK = 1
+NONE = 0
 
 
 class Board:
-
     def __init__(self) -> None:
         self.pieceSet = {}
         self.turn = WHITE_TURN
+        self.whiteCastlineRights = LEGAL
+        self.blackCastlingRights = LEGAL
+        self.movesWithoutCapture = NONE
 
         self.wR1 = Rook(Squares.A1, WHITE)
         self.wKn1 = Knight(Squares.B1, WHITE)
@@ -86,8 +90,19 @@ class Board:
         self.turn = BLACK_TURN
         return
 
+    def pop(self):
+        # Pops last move off of move stack.
+
+        return
+
     def getTurn(self) -> int:
         return self.turn
+
+    def getLegalMoves(self):
+        # Iterate through squares
+        # Generate moves for each piece by calling getMoves() for each piece
+
+        return
 
     def printBoard(self):
         flag = WHITE
