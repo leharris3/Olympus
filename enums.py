@@ -1,6 +1,15 @@
 from enum import Enum
 
 
+class PieceTypes(Enum):
+    PAWN = 0
+    KNIGHT = 1
+    BISHOP = 2
+    ROOK = 3
+    QUEEN = 4
+    KING = 5
+
+
 class MoveCodes(Enum):
     QUIET_MOVE = 0
     DOUBLE_PAWN_PUSH = 1

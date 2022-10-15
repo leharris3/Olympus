@@ -1,5 +1,9 @@
+from chess import PAWN
+from enums import PieceTypes
+
+
 class Piece():
-    def __init__(self, position: int, color: str, type: str) -> None:
+    def __init__(self, position: int, color: str, type: int) -> None:
         self.type = type
         self.color = color
         self.position = position
@@ -16,29 +20,29 @@ class Piece():
 
 class Pawn(Piece):
     def __init__(self, position: int, color: str) -> None:
-        super().__init__(position, color, "Pawn")
+        super().__init__(position, color, PieceTypes.PAWN)
 
 
 class Bishop(Piece):
     def __init__(self, position: int, color: str) -> None:
-        super().__init__(position, color, "Bishop")
+        super().__init__(position, color, PieceTypes.BISHOP)
 
 
 class Knight(Piece):
     def __init__(self, position: int, color: str) -> None:
-        super().__init__(position, color, "Knight")
+        super().__init__(position, color, PieceTypes.KNIGHT)
 
 
 class Rook(Piece):
     def __init__(self, position: int, color: str) -> None:
-        super().__init__(position, color, "Rook")
+        super().__init__(position, color, PieceTypes.ROOK)
 
 
 class Queen(Piece):
     def __init__(self, position: int, color: str) -> None:
-        super().__init__(position, color, "Queen")
+        super().__init__(position, color, PieceTypes.QUEEN)
 
 
 class King(Piece):
     def __init__(self, position: int, color: str) -> None:
-        super().__init__(position, color, "King")
+        super().__init__(position, color, PieceTypes.KING)
