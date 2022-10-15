@@ -10,6 +10,9 @@ class Piece():
     def getType(self):
         return self.type
 
+    def getColor(self):
+        return self.color
+
 
 class Pawn(Piece):
     def __init__(self, position: int, color: str) -> None:

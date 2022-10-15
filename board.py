@@ -1,5 +1,6 @@
-from squares import Squares
+from enums import Squares
 from pieces import Pawn, Rook, Knight, Queen, King, Bishop
+import queue
 
 LEGAL = True
 ILLEGAL = False
@@ -13,10 +14,15 @@ NONE = 0
 class Board:
     def __init__(self) -> None:
         self.pieceSet = {}
+        self.moveQueue = queue.Queue()
+        self.activePieces = []
+
         self.turn = WHITE_TURN
         self.whiteCastlineRights = LEGAL
         self.blackCastlingRights = LEGAL
         self.movesWithoutCapture = NONE
+        self.whiteKinginCheck = False
+        self.blackKinginCheck = False
 
         self.wR1 = Rook(Squares.A1, WHITE)
         self.wKn1 = Knight(Squares.B1, WHITE)
@@ -52,57 +58,30 @@ class Board:
         self.bP7 = Pawn(Squares.G7, BLACK)
         self.bP8 = Pawn(Squares.H7, BLACK)
 
-        self.pieceSet[self.wR1.getSquare()] = self.wR1
-        self.pieceSet[self.wKn1.getSquare()] = self.wKn1
-        self.pieceSet[self.wB1.getSquare()] = self.wB1
-        self.pieceSet[self.wQ.getSquare()] = self.wQ
-        self.pieceSet[self.wKg.getSquare()] = self.wKg
-        self.pieceSet[self.wB2.getSquare()] = self.wB2
-        self.pieceSet[self.wKn2.getSquare()] = self.wKn2
-        self.pieceSet[self.wR2.getSquare()] = self.wR2
-        self.pieceSet[self.wP1.getSquare()] = self.wP1
-        self.pieceSet[self.wP2.getSquare()] = self.wP2
-        self.pieceSet[self.wP3.getSquare()] = self.wP3
-        self.pieceSet[self.wP4.getSquare()] = self.wP4
-        self.pieceSet[self.wP5.getSquare()] = self.wP5
-        self.pieceSet[self.wP6.getSquare()] = self.wP6
-        self.pieceSet[self.wP7.getSquare()] = self.wP7
-        self.pieceSet[self.wP8.getSquare()] = self.wP8
+        self.activePieces = [self.wR1, self.wKn1, self.wB1, self.wQ, self.wKg, self.wB2, self.wKn2, self.wR2, self.wP1, self.wP2, self.wP3, self.wP4, self.wP5, self.wP6, self.wP7,
+                             self.wP8, self.bR1, self.bKn1, self.bB1, self.bQ, self.bKg,  self.bB2, self.bKn2, self.bR2, self.bP1, self.bP2, self.bP3, self.bP4, self.bP5, self.bP6, self.bP7, self.bP8]
 
-        self.pieceSet[self.bR1.getSquare()] = self.bR1
-        self.pieceSet[self.bKn1.getSquare()] = self.bKn1
-        self.pieceSet[self.bB1.getSquare()] = self.bB1
-        self.pieceSet[self.bQ.getSquare()] = self.bQ
-        self.pieceSet[self.bKg.getSquare()] = self.bKg
-        self.pieceSet[self.bB2.getSquare()] = self.bB2
-        self.pieceSet[self.bKn2.getSquare()] = self.bKn2
-        self.pieceSet[self.bR2.getSquare()] = self.bR2
-        self.pieceSet[self.bP1.getSquare()] = self.bP1
-        self.pieceSet[self.bP2.getSquare()] = self.bP2
-        self.pieceSet[self.bP3.getSquare()] = self.bP3
-        self.pieceSet[self.bP4.getSquare()] = self.bP4
-        self.pieceSet[self.bP5.getSquare()] = self.bP5
-        self.pieceSet[self.bP6.getSquare()] = self.bP6
-        self.pieceSet[self.bP7.getSquare()] = self.bP7
-        self.pieceSet[self.bP8.getSquare()] = self.bP8
+        for p in self.activePieces:
+            self.pieceSet[p.getSquare()] = p
 
     def move(self):
-        self.turn = BLACK_TURN
+        self.turn = ~self.turn
         return
 
     def pop(self):
-        # Pops last move off of move stack.
+        self.moveQueue.pop()
 
+    def getLegalMoves(self):
+        arr = []
+        # Iterate through squares
+        # Generate moves for each piece by calling getMoves() for each piece
+        return
+
+    def setBoard(self, fen: str):
         return
 
     def getTurn(self) -> int:
         return self.turn
-
-    def getLegalMoves(self):
-        # Iterate through squares
-        # Generate moves for each piece by calling getMoves() for each piece
-
-        return
 
     def printBoard(self):
         flag = WHITE
@@ -110,23 +89,19 @@ class Board:
         i = 1
         for square in Squares:
             if square in self.pieceSet:
-                temp += self.pieceSet[square].getType()[0:1]
+                temp += self.pieceSet[square].getType()[0]
             else:
                 if flag == WHITE:
                     temp += "--"
-                    flag = BLACK
                 else:
                     temp += "++"
-                    flag = WHITE
+                flag = ~flag
             temp += " "
             if (i % 8 == 0):
                 print(temp)
                 temp = ""
                 i = 1
-                if flag == WHITE:
-                    flag = BLACK
-                else:
-                    flag = WHITE
+                flag = ~flag
             else:
                 i += 1
 

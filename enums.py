@@ -1,6 +1,23 @@
 from enum import Enum
 
 
+class MoveCodes(Enum):
+    QUIET_MOVE = 0
+    DOUBLE_PAWN_PUSH = 1
+    KING_CASTLE = 2
+    QUEEN_CASTLE = 3
+    CAPTURES = 4
+    EP_CAPTURE = 5
+    KNIGHT_PROMOTION = 6
+    BISHOP_PROMOTION = 7
+    ROOK_PROMOTION = 8
+    QUEEN_PROMOTION = 9
+    KING_PROMO_CAPTURE = 10
+    BISHOP_PROMO_CAPTURE = 11
+    ROOK_PROMO_CAPTURE = 12
+    QUEEN_PROMO_CAPTURE = 13
+
+
 class Squares(Enum):
     A1 = 1
     A2 = 2
