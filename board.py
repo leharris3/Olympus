@@ -1,6 +1,7 @@
-from tarfile import LENGTH_LINK
-from enums import Squares, PieceTypes
-from pieces import Pawn, Rook, Knight, Queen, King, Bishop
+import math
+from enums import MoveCodes, Squares, PieceTypes
+from pieces import Pawn, Rook, Knight, Queen, King, Bishop, Piece
+from move import Move
 import queue
 
 LEGAL = True
@@ -10,21 +11,32 @@ BLACK_TURN = 1
 WHITE = 0
 BLACK = 1
 NONE = 0
+POSITIVE = 1
+NEGATIVE = 1
+
+FILE_BIT = 8
+RANK_BIT = 1
+FIRST_SQUARE = 1
+LAST_SQUARE = 9223372036854775808
 
 
 class Board:
+
     def __init__(self) -> None:
         self.pieceSet = {}
         self.moveQueue = queue.Queue()
         self.activePieces = []
+        self.legalMoves = []
 
         self.turn = WHITE_TURN
+        self.gameOver = False
         self.whiteCastleKing = LEGAL
         self.whiteCastleQueen = LEGAL
         self.blackCastleKing = LEGAL
         self.blackCastleQueen = LEGAL
 
         self.movesWithoutCapture = NONE
+        self.movesRepeated = NONE
         self.whiteKinginCheck = False
         self.blackKinginCheck = False
 
@@ -67,36 +79,72 @@ class Board:
         self.activeBlackPieces = [self.bR1, self.bKn1, self.bB1, self.bQ, self.bKg,  self.bB2, self.bKn2,
                                   self.bR2, self.bP1, self.bP2, self.bP3, self.bP4, self.bP5, self.bP6, self.bP7, self.bP8]
 
-        for p in self.activePieces:
+        for p in self.activeWhitePieces:
+            self.pieceSet[p.getSquare()] = p
+        for p in self.activeBlackPieces:
             self.pieceSet[p.getSquare()] = p
 
     def move(self):
+        if self.isCheck():
+            if self.turn == WHITE:
+                self.whiteKinginCheck = True
+            else:
+                self.blackKinginCheck = True
         self.turn = ~self.turn
+        # Update flags
+        # isGameOver
+        # Draws: stalemate / 3-fold / 50-move
         return
 
     def pop(self):
         self.moveQueue.pop()
 
-    def getLegalMoves(self):
-        legalMoves = []
+    def generateLegalMoves(self):
+
         if self.turn == WHITE:
             if not self.whiteKinginCheck:
                 for piece in self.activeWhitePieces:
-                    legalMoves.append(self.getMovesByPiece(piece))
+                    self.getMovesByPiece(piece)
             else:
-                legalMoves.append(self.getMovesByPiece(self.wKg))
+                self.getMovesByPiece(self.wKg)
         else:
             if not self.blackKinginCheck:
                 for piece in self.activeBlackPieces:
-                    legalMoves.append(self.getMovesByPiece(piece))
+                    self.getMovesByPiece(piece)
             else:
-                legalMoves.append(self.getMovesByPiece(self.bKg))
-        return legalMoves
+                self.getMovesByPiece(self.bKg)
 
-    def getMovesByPiece(self, piece):
-        if piece.getType == PieceTypes.KING:
+        self.legalMoves.append("Test")
+        return self.legalMoves
+
+    def getMovesByPiece(self, startPiece: Piece):
+
+        sign = POSITIVE
+        startSquare = startPiece.getSquare()
+        endSquare = None
+        endPiece = None
+
+        # 0 0 0 0 0 0 0 0
+        # 0 0 0 0 0 0 0 0
+        # 0 0 0 0 0 0 0 0
+        # 0 0 0 0 0 0 0 0
+        # 0 0 0 0 0 0 0 0
+        # 0 0 0 0 0 0 0 0
+        # 0 0 0 0 0 0 0 0
+        # 1 2 0 0 0 0 0 0
+
+        if startPiece.getColor:
+            sign = NEGATIVE
+        if startPiece.getType == PieceTypes.KING:
             pass
+
+            # Move up rank, SR 8
+            # Move down rank, SL 8
+
             # Up
+            endSquare = startPiece.getSquare() >> FILE_BIT
+            self.normalProbe()
+
             # Down
             # Left
             # Right
@@ -106,7 +154,7 @@ class Board:
             # BL
             # Castle-King
             # Castle-Queen
-        elif piece.getType == PieceTypes.QUEEN:
+        elif startPiece.getType == PieceTypes.QUEEN:
             pass
             # Up
             # Down
@@ -116,13 +164,13 @@ class Board:
             # Slide TL
             # Slide BR
             # Slide BL
-        elif piece.getType == PieceTypes.BISHOP:
+        elif startPiece.getType == PieceTypes.BISHOP:
             pass
             # Slide TR
             # Slide TL
             # Slide BR
             # Slide BL
-        elif piece.getType == PieceTypes.KNIGHT:
+        elif startPiece.getType == PieceTypes.KNIGHT:
             # 2U-1R
             # 2U-1L
             # 2D-1R
@@ -132,7 +180,7 @@ class Board:
             # 1D-2R
             # 1D-2L
             pass
-        elif piece.getType == PieceTypes.ROOK:
+        elif startPiece.getType == PieceTypes.ROOK:
             # Increment right
             # Increment left
             # Increment down
@@ -140,7 +188,7 @@ class Board:
             # Castle-King
             # Castle-Queen
             pass
-        elif piece.getType == PieceTypes.PAWN:
+        elif startPiece.getType == PieceTypes.PAWN:
             # 1-Forward
             # 1-Forward + Promotion
             # 2-Forward
@@ -151,21 +199,76 @@ class Board:
             pass
         else:
             pass
-        return
+
+        def normalProbe(self, startPiece: Piece, endSquare: int):
+            # Probes hash table at endSqaure location, adds moves
+            endPiece: Piece
+            startSquare: int = startPiece.getSquare()
+            if self.onBoard(endSquare):
+                if endSquare in self.pieceSet:
+                    endPiece = self.pieceSet[startPiece.getSquare()]
+                    if endPiece.getColor() != startPiece.getColor():
+                        self.legalMoves.append(
+                            Move(startSquare, endSquare, startPiece, endPiece, MoveCodes.CAPTURES))
+                else:
+                    self.legalMoves.append(
+                        Move(startSquare, endSquare, startPiece, None, MoveCodes.QUIET_MOVE))
+
+        def onBoard(self, i: int):
+            return i >= FIRST_SQUARE and i <= LAST_SQUARE and math.log(i, 2) % 1 == 0
+
+    def generateOppAttackMaps(self):
+        attackMaps = []
+        if self.turn == WHITE:
+            pass
+        else:
+            pass
+        return attackMaps
+
+    def isCheck(self, move: Move):
+        # If king in piece attack map --> return true
+        # Only generate attack map for moves made
+        return False
+
+    def isCheckMate(self, move: Move):
+        if self.isCheck(move):
+            for move in self.generateOppAttackMaps():
+                pass
+            # Generate opposite color attack maps
+            # If all king moves in at least one attack map: mate
+            pass
+        return False
 
     def setBoard(self, fen: str):
         return
 
-    def getTurn(self) -> int:
-        return self.turn
+    def getTurn(self):
+        if self.turn == WHITE:
+            return "White"
+        else:
+            return "Black"
 
     def printBoard(self):
         flag = WHITE
-        temp = ""
+        temp, p = "", ""
         i = 1
         for square in Squares:
             if square in self.pieceSet:
-                temp += self.pieceSet[square].getType()[0]
+                if self.pieceSet[square].getType() == PieceTypes.BISHOP:
+                    p = "B"
+                elif self.pieceSet[square].getType() == PieceTypes.KING:
+                    p = "K"
+                elif self.pieceSet[square].getType() == PieceTypes.KNIGHT:
+                    p = "K"
+                elif self.pieceSet[square].getType() == PieceTypes.ROOK:
+                    p = "R"
+                elif self.pieceSet[square].getType() == PieceTypes.PAWN:
+                    p = "P"
+                elif self.pieceSet[square].getType() == PieceTypes.QUEEN:
+                    p = "Q"
+                if self.pieceSet[square].getColor() == BLACK:
+                    p = p.lower()
+                temp += p
             else:
                 if flag == WHITE:
                     temp += "--"
@@ -185,7 +288,7 @@ class Board:
 class Main:
     def main():
         board = Board()
-        print(board.getLegalMoves())
+        print(board.generateLegalMoves())
         return
 
     if __name__ == "__main__":

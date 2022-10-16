@@ -3,10 +3,11 @@ from enums import PieceTypes
 
 
 class Piece():
-    def __init__(self, position: int, color: str, type: int) -> None:
+    def __init__(self, position: int, color: int, type: int) -> None:
         self.type = type
         self.color = color
         self.position = position
+        self.attackMap = 0
 
     def getSquare(self):
         return self.position
