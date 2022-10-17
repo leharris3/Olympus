@@ -8,3 +8,9 @@ class Move():
         self.startPiece = startPiece
         self.endPiece = endPiece
         self.moveType = moveType
+
+    def getStartPiece(self):
+        return self.startPiece
+
+    def getEndSquare(self):
+        return self.endSquare

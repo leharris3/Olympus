@@ -24,6 +24,7 @@ class Board:
 
     def __init__(self) -> None:
         self.pieceSet = {}
+        self.positions = {}  # Set of position ID's for 3-Fold
         self.moveQueue = queue.Queue()
         self.activePieces = []
         self.legalMoves = []
@@ -35,6 +36,7 @@ class Board:
         self.blackCastleKing = LEGAL
         self.blackCastleQueen = LEGAL
 
+        self.moveCounter = NONE
         self.movesWithoutCapture = NONE
         self.movesRepeated = NONE
         self.whiteKinginCheck = False
@@ -84,17 +86,24 @@ class Board:
         for p in self.activeBlackPieces:
             self.pieceSet[p.getSquare()] = p
 
-    def move(self):
-        if self.isCheck():
+    def move(self, move: Move):
+        if move in self.generateLegalMoves():
             if self.turn == WHITE:
-                self.whiteKinginCheck = True
-            else:
-                self.blackKinginCheck = True
-        self.turn = ~self.turn
+                self.moveCounter += 1
+            if self.isCheck(move):
+                if self.turn == WHITE:
+                    self.whiteKinginCheck = True
+                else:
+                    self.blackKinginCheck = True
+            self.turn = ~self.turn
+            move.getStartPiece().setSquare(move.getEndSquare())
+        else:
+            raise ValueError("Invalid Move")
+
         # Update flags
         # isGameOver
-        # Draws: stalemate / 3-fold / 50-move
-        return
+        # Draws: stalemate / 50-move
+        # 3 - Fold
 
     def pop(self):
         self.moveQueue.pop()
@@ -113,15 +122,13 @@ class Board:
                     self.getMovesByPiece(piece)
             else:
                 self.getMovesByPiece(self.bKg)
-
-        self.legalMoves.append("Test")
         return self.legalMoves
 
     def getMovesByPiece(self, startPiece: Piece):
 
         sign = POSITIVE
-        startSquare = startPiece.getSquare()
-        endSquare = None
+        startSquare: int = startPiece.getSquare()
+        endSquare: int = NONE
         endPiece = None
 
         # 0 0 0 0 0 0 0 0
@@ -135,15 +142,22 @@ class Board:
 
         if startPiece.getColor:
             sign = NEGATIVE
-        if startPiece.getType == PieceTypes.KING:
+        if startPiece.getType() == PieceTypes.KING:
             pass
 
             # Move up rank, SR 8
             # Move down rank, SL 8
 
             # Up
-            endSquare = startPiece.getSquare() >> FILE_BIT
-            self.normalProbe()
+            endSquare = startSquare >> FILE_BIT
+            self.normalProbe(startPiece, endSquare)
+            # Down
+            # Left
+            # Right
+            # TR
+            # TL
+            # BL
+            # BR
 
             # Down
             # Left
@@ -154,7 +168,7 @@ class Board:
             # BL
             # Castle-King
             # Castle-Queen
-        elif startPiece.getType == PieceTypes.QUEEN:
+        elif startPiece.getType() == PieceTypes.QUEEN:
             pass
             # Up
             # Down
@@ -164,13 +178,13 @@ class Board:
             # Slide TL
             # Slide BR
             # Slide BL
-        elif startPiece.getType == PieceTypes.BISHOP:
+        elif startPiece.getType() == PieceTypes.BISHOP:
             pass
             # Slide TR
             # Slide TL
             # Slide BR
             # Slide BL
-        elif startPiece.getType == PieceTypes.KNIGHT:
+        elif startPiece.getType() == PieceTypes.KNIGHT:
             # 2U-1R
             # 2U-1L
             # 2D-1R
@@ -180,7 +194,7 @@ class Board:
             # 1D-2R
             # 1D-2L
             pass
-        elif startPiece.getType == PieceTypes.ROOK:
+        elif startPiece.getType() == PieceTypes.ROOK:
             # Increment right
             # Increment left
             # Increment down
@@ -188,8 +202,10 @@ class Board:
             # Castle-King
             # Castle-Queen
             pass
-        elif startPiece.getType == PieceTypes.PAWN:
+        elif startPiece.getType() == PieceTypes.PAWN:
             # 1-Forward
+            endSquare = startSquare << 1 * sign
+            self.normalProbe(startPiece, endSquare)
             # 1-Forward + Promotion
             # 2-Forward
             # TR-Capture-Normal
@@ -200,22 +216,22 @@ class Board:
         else:
             pass
 
-        def normalProbe(self, startPiece: Piece, endSquare: int):
-            # Probes hash table at endSqaure location, adds moves
-            endPiece: Piece
-            startSquare: int = startPiece.getSquare()
-            if self.onBoard(endSquare):
-                if endSquare in self.pieceSet:
-                    endPiece = self.pieceSet[startPiece.getSquare()]
-                    if endPiece.getColor() != startPiece.getColor():
-                        self.legalMoves.append(
-                            Move(startSquare, endSquare, startPiece, endPiece, MoveCodes.CAPTURES))
-                else:
+    def normalProbe(self, startPiece: Piece, endSquare: int):
+        # Probes hash table at endSqaure location, adds moves
+        endPiece: Piece
+        startSquare: int = startPiece.getSquare()
+        if self.onBoard(endSquare):
+            if endSquare in self.pieceSet:
+                endPiece = self.pieceSet[startPiece.getSquare()]
+                if endPiece.getColor() != startPiece.getColor():
                     self.legalMoves.append(
-                        Move(startSquare, endSquare, startPiece, None, MoveCodes.QUIET_MOVE))
+                        Move(startSquare, endSquare, startPiece, endPiece, MoveCodes.CAPTURES))
+            else:
+                self.legalMoves.append(
+                    Move(startSquare, endSquare, startPiece, None, MoveCodes.QUIET_MOVE))
 
-        def onBoard(self, i: int):
-            return i >= FIRST_SQUARE and i <= LAST_SQUARE and math.log(i, 2) % 1 == 0
+    def onBoard(self, i: int):
+        return i >= FIRST_SQUARE and i <= LAST_SQUARE and math.log(i, 2) % 1 == 0
 
     def generateOppAttackMaps(self):
         attackMaps = []
@@ -289,6 +305,8 @@ class Main:
     def main():
         board = Board()
         print(board.generateLegalMoves())
+
+        # board.printBoard()
         return
 
     if __name__ == "__main__":

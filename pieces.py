@@ -1,15 +1,18 @@
 from chess import PAWN
-from enums import PieceTypes
+from enums import PieceTypes, Squares
 
 
 class Piece():
-    def __init__(self, position: int, color: int, type: int) -> None:
+    def __init__(self, position: Squares, color: int, type: int) -> None:
         self.type = type
         self.color = color
-        self.position = position
+        self.position = position.value
         self.attackMap = 0
 
-    def getSquare(self):
+    def setSquare(self, position: int):
+        self.position = position
+
+    def getSquare(self) -> int:
         return self.position
 
     def getType(self):
@@ -21,7 +24,15 @@ class Piece():
 
 class Pawn(Piece):
     def __init__(self, position: int, color: str) -> None:
+        self.canEp = False
+        self.epDir = None
+        self.epMove = None
         super().__init__(position, color, PieceTypes.PAWN)
+
+    def setEp(self, epDir: int, epMove: int):
+        self.canEp = True
+        self.epDir = epDir
+        self.epMove = epMove
 
 
 class Bishop(Piece):
