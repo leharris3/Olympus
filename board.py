@@ -25,6 +25,7 @@ class Board:
     def __init__(self) -> None:
         self.pieceSet = {}
         self.positions = {}  # Set of position ID's for 3-Fold
+        self.attackMaps = {}
         self.moveQueue = queue.Queue()
         self.activePieces = []
         self.legalMoves = []
@@ -96,7 +97,10 @@ class Board:
                 else:
                     self.blackKinginCheck = True
             self.turn = ~self.turn
+            del self.pieceSet[move.getStartSquare()]
+            self.pieceSet[move.getEndSquare()] = move.getStartPiece()
             move.getStartPiece().setSquare(move.getEndSquare())
+            self.moveQueue.put(move)
         else:
             raise ValueError("Invalid Move")
 
@@ -106,7 +110,12 @@ class Board:
         # 3 - Fold
 
     def pop(self):
-        self.moveQueue.pop()
+        move = self.moveQueue.get()
+        self.pieceSet[move.getStartSquare()] = move.getStartPiece()
+        if move.getEndPiece() != None:
+            self.pieceSet[move.getEndSquare()] = move.getEndPiece()
+        else:
+            del self.pieceSet[move.getEndSquare()]
 
     def generateLegalMoves(self):
 
@@ -129,7 +138,6 @@ class Board:
         sign = POSITIVE
         startSquare: int = startPiece.getSquare()
         endSquare: int = NONE
-        endPiece = None
 
         # 0 0 0 0 0 0 0 0
         # 0 0 0 0 0 0 0 0
@@ -151,6 +159,7 @@ class Board:
             # Up
             endSquare = startSquare >> FILE_BIT
             self.normalProbe(startPiece, endSquare)
+
             # Down
             # Left
             # Right
@@ -203,11 +212,16 @@ class Board:
             # Castle-Queen
             pass
         elif startPiece.getType() == PieceTypes.PAWN:
+            # 2-Forward
+            if not startPiece.getHasMoved():
+                endSquare = startSquare << RANK_BIT * 2 * sign;
+                self.normalProbe(startPiece, endSquare)
+            
             # 1-Forward
             endSquare = startSquare << 1 * sign
             self.normalProbe(startPiece, endSquare)
+
             # 1-Forward + Promotion
-            # 2-Forward
             # TR-Capture-Normal
             # TL-Capture-Normal
             # TR-Capture-EP
@@ -219,21 +233,24 @@ class Board:
     def normalProbe(self, startPiece: Piece, endSquare: int):
         # Probes hash table at endSqaure location, adds moves
         endPiece: Piece
+        move: Move
         startSquare: int = startPiece.getSquare()
         if self.onBoard(endSquare):
             if endSquare in self.pieceSet:
                 endPiece = self.pieceSet[startPiece.getSquare()]
                 if endPiece.getColor() != startPiece.getColor():
-                    self.legalMoves.append(
-                        Move(startSquare, endSquare, startPiece, endPiece, MoveCodes.CAPTURES))
+                    move = Move(startSquare, endSquare, startPiece, endPiece, MoveCodes.CAPTURES)
+                    if not self.isCheck(move):
+                        self.legalMoves.append(move)
             else:
-                self.legalMoves.append(
-                    Move(startSquare, endSquare, startPiece, None, MoveCodes.QUIET_MOVE))
+                    move = Move(startSquare, endSquare, startPiece, None, MoveCodes.QUIET_MOVE)
+                    if not self.isCheck(move):
+                        self.legalMoves.append(move)
 
     def onBoard(self, i: int):
         return i >= FIRST_SQUARE and i <= LAST_SQUARE and math.log(i, 2) % 1 == 0
 
-    def generateOppAttackMaps(self):
+    def generateAttackMaps(self):
         attackMaps = []
         if self.turn == WHITE:
             pass
@@ -244,11 +261,16 @@ class Board:
     def isCheck(self, move: Move):
         # If king in piece attack map --> return true
         # Only generate attack map for moves made
+        self.generateAttackMaps()
+        if self.turn == WHITE:
+            if self.wKg in self.attackMaps: return True
+        else:
+            if self.bKg in self.attackMaps: return True
         return False
 
     def isCheckMate(self, move: Move):
         if self.isCheck(move):
-            for move in self.generateOppAttackMaps():
+            for move in self.generateAttackMaps():
                 pass
             # Generate opposite color attack maps
             # If all king moves in at least one attack map: mate
@@ -269,20 +291,20 @@ class Board:
         temp, p = "", ""
         i = 1
         for square in Squares:
-            if square in self.pieceSet:
-                if self.pieceSet[square].getType() == PieceTypes.BISHOP:
+            if square.value in self.pieceSet:
+                if self.pieceSet[square.value].getType() == PieceTypes.BISHOP:
                     p = "B"
-                elif self.pieceSet[square].getType() == PieceTypes.KING:
+                elif self.pieceSet[square.value].getType() == PieceTypes.KING:
                     p = "K"
-                elif self.pieceSet[square].getType() == PieceTypes.KNIGHT:
+                elif self.pieceSet[square.value].getType() == PieceTypes.KNIGHT:
                     p = "K"
-                elif self.pieceSet[square].getType() == PieceTypes.ROOK:
+                elif self.pieceSet[square.value].getType() == PieceTypes.ROOK:
                     p = "R"
-                elif self.pieceSet[square].getType() == PieceTypes.PAWN:
+                elif self.pieceSet[square.value].getType() == PieceTypes.PAWN:
                     p = "P"
-                elif self.pieceSet[square].getType() == PieceTypes.QUEEN:
+                elif self.pieceSet[square.value].getType() == PieceTypes.QUEEN:
                     p = "Q"
-                if self.pieceSet[square].getColor() == BLACK:
+                if self.pieceSet[square.value].getColor() == BLACK:
                     p = p.lower()
                 temp += p
             else:
@@ -304,9 +326,14 @@ class Board:
 class Main:
     def main():
         board = Board()
-        print(board.generateLegalMoves())
+        moves = board.generateLegalMoves()
+        moveOne = board.generateLegalMoves()[0]
+        # print(moves)
+        board.move(moveOne)
+        board.printBoard()
 
-        # board.printBoard()
+        board.pop()
+        board.printBoard()
         return
 
     if __name__ == "__main__":

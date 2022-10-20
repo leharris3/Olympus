@@ -1,4 +1,3 @@
-from chess import PAWN
 from enums import PieceTypes, Squares
 
 
@@ -8,6 +7,7 @@ class Piece():
         self.color = color
         self.position = position.value
         self.attackMap = 0
+        self.hasMoved = False
 
     def setSquare(self, position: int):
         self.position = position
@@ -21,6 +21,12 @@ class Piece():
     def getColor(self):
         return self.color
 
+    def getHasMoved(self):
+        return self.hasMoved;
+    
+    def setHasMoved(self):
+        self.hasMoved = True;
+      
 
 class Pawn(Piece):
     def __init__(self, position: int, color: str) -> None:
