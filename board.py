@@ -12,7 +12,7 @@ WHITE = 0
 BLACK = 1
 NONE = 0
 POSITIVE = 1
-NEGATIVE = 1
+NEGATIVE = -1
 
 FILE_BIT = 8
 RANK_BIT = 1
@@ -89,10 +89,10 @@ class Board:
 
     def move(self, move: Move):
         if move in self.generateLegalMoves():
-            if self.turn == WHITE:
+            if self.turn == WHITE_TURN:
                 self.moveCounter += 1
             if self.isCheck(move):
-                if self.turn == WHITE:
+                if self.turn == WHITE_TURN:
                     self.whiteKinginCheck = True
                 else:
                     self.blackKinginCheck = True
@@ -118,8 +118,8 @@ class Board:
             del self.pieceSet[move.getEndSquare()]
 
     def generateLegalMoves(self):
-
-        if self.turn == WHITE:
+        self.legalMoves = []
+        if self.turn == WHITE_TURN:
             if not self.whiteKinginCheck:
                 for piece in self.activeWhitePieces:
                     self.getMovesByPiece(piece)
@@ -131,11 +131,9 @@ class Board:
                     self.getMovesByPiece(piece)
             else:
                 self.getMovesByPiece(self.bKg)
-        return self.legalMoves
 
     def getMovesByPiece(self, startPiece: Piece):
 
-        sign = POSITIVE
         startSquare: int = startPiece.getSquare()
         endSquare: int = NONE
 
@@ -148,8 +146,6 @@ class Board:
         # 0 0 0 0 0 0 0 0
         # 1 2 0 0 0 0 0 0
 
-        if startPiece.getColor:
-            sign = NEGATIVE
         if startPiece.getType() == PieceTypes.KING:
             pass
 
@@ -212,24 +208,44 @@ class Board:
             # Castle-Queen
             pass
         elif startPiece.getType() == PieceTypes.PAWN:
-            # 2-Forward
-            if not startPiece.getHasMoved():
-                endSquare = startSquare << RANK_BIT * 2 * sign;
+            if self.turn == WHITE:
+                # 2-Forward
+                if not startPiece.getHasMoved():
+                    endSquare = startSquare << (RANK_BIT * 2);
                 self.normalProbe(startPiece, endSquare)
             
-            # 1-Forward
-            endSquare = startSquare << 1 * sign
-            self.normalProbe(startPiece, endSquare)
+                # 1-Forward
+                endSquare = startSquare << (RANK_BIT)
+                self.normalProbe(startPiece, endSquare)
 
-            # 1-Forward + Promotion
-            # TR-Capture-Normal
-            # TL-Capture-Normal
-            # TR-Capture-EP
-            # TL-Capture-EP
-            pass
+                # 1-Forward + Promotion
+                # TR-Capture-Normal
+                # TL-Capture-Normal
+                # TR-Capture-EP
+                # TL-Capture-EP
+                pass
+            else:
+                # Black Turn
+
+                # 2-Forward
+                if not startPiece.getHasMoved():
+                    endSquare = startSquare >> (RANK_BIT * 2);
+                self.normalProbe(startPiece, endSquare)
+            
+                # 1-Forward
+                endSquare = startSquare >> (RANK_BIT)
+                self.normalProbe(startPiece, endSquare)
+
+                # 1-Forward + Promotion
+                # TR-Capture-Normal
+                # TL-Capture-Normal
+                # TR-Capture-EP
+                # TL-Capture-EP
+                pass
         else:
             pass
 
+            
     def normalProbe(self, startPiece: Piece, endSquare: int):
         # Probes hash table at endSqaure location, adds moves
         endPiece: Piece
@@ -326,14 +342,9 @@ class Board:
 class Main:
     def main():
         board = Board()
-        moves = board.generateLegalMoves()
-        moveOne = board.generateLegalMoves()[0]
-        # print(moves)
-        board.move(moveOne)
         board.printBoard()
 
-        board.pop()
-        board.printBoard()
+        print(board.generateLegalMoves())
         return
 
     if __name__ == "__main__":
